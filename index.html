@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Super Chat Bot Pro</title>
+<link href="https://cdn.jsdelivr.net/npm/remixicon/fonts/remixicon.css" rel="stylesheet">
+<style>
+  /* Base Reset & Variables - Updated for Modern Look */
+  :root {
+    --primary-color: #007bff; /* Vibrant Blue */
+    --secondary-color: #e9ecef; /* Input/Bot background */
+    --user-bubble-bg: var(--primary-color);
+    --bot-bubble-bg: #f8f9fa; /* Light grey/off-white */
+    --text-color: #212529;
+    --header-height: 60px;
+    --footer-height: 65px;
+  }
+  * {margin: 0; padding: 0; box-sizing: border-box;}
+  body, html {height: 100%; font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5;}
+  body {display: flex; flex-direction: column; overflow: hidden;} /* Prevent body scroll */
+
+  /* Header - Modern & Elevated */
+  header {
+    height: var(--header-height);
+    background: white; color: var(--text-color);
+    padding: 0 20px; display: flex; align-items: center; gap: 12px;
+    z-index: 10;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); /* Softer, modern shadow */
+  }
+  header img {width: 44px; height: 44px; border-radius: 50%; object-fit: cover;}
+  header span {font-weight: 600; font-size: 1.2em; color: var(--text-color);}
+  header i {font-size: 1.5em; color: #6c757d; margin-left: auto;}
+
+  /* Chat Container (Main Content Area) */
+  #chat-container {
+    flex: 1; overflow-y: auto;
+    padding: var(--header-height) 15px var(--footer-height);
+    display: flex; flex-direction: column; gap: 10px;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10" fill="#f0f2f5"/><circle cx="5" cy="5" r="1" fill-opacity="0.05" fill="#000"/></svg>'); /* Subtle background pattern */
+    scroll-behavior: smooth;
+  }
+  /* Message Bubbles - Refined Look */
+  .message {
+    display: flex; max-width: 90%;
+  }
+  .bot {flex-direction: row;}
+  .user {flex-direction: row-reverse; align-self: flex-end;}
+  .icon {
+    width: 32px; height: 32px; border-radius: 50%; overflow: hidden;
+    margin: 0 6px; flex-shrink: 0; align-self: flex-end;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .icon img {width: 100%; height: 100%; object-fit: cover;}
+
+  .bubble {
+    padding: 10px 16px; border-radius: 20px; line-height: 1.4;
+    word-break: break-word; font-size: 0.95em;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15); /* Soft, consistent shadow */
+    transition: transform 0.1s ease;
+  }
+  .bot .bubble {
+    background: var(--bot-bubble-bg); color: var(--text-color);
+    border-bottom-left-radius: 6px; /* Less harsh corner */
+    margin-right: auto;
+  }
+  .user .bubble {
+    background: var(--user-bubble-bg); color: white;
+    border-bottom-right-radius: 6px; /* Less harsh corner */
+    margin-left: auto;
+  }
+  
+  .bubble a {color: inherit; text-decoration: underline;}
+  .bot .bubble a {color: var(--primary-color);}
+  
+  /* Images in Chat */
+  .bubble img {max-width: 100%; height: auto; border-radius: 12px; margin-top: 5px; display: block;}
+
+  /* Loading Indicator */
+  .loading-dots {
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bot-bubble-bg);
+    border-bottom-left-radius: 6px;
+    width: 55px; /* Fixed width for better look */
+    height: 40px; /* Fixed height */
+  }
+  .loading-dots div {
+    width: 7px; height: 7px; margin: 0 2px;
+    background-color: #999; border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out both;
+  }
+  .loading-dots div:nth-child(1) {animation-delay: -0.32s;}
+  .loading-dots div:nth-child(2) {animation-delay: -0.16s;}
+  
+  @keyframes bounce {
+    0%, 80%, 100% {transform: scale(0);}
+    40% {transform: scale(1.0);}
+  }
+
+  /* Footer (Input Area) - Clean and Functional */
+  footer {
+    position: fixed; bottom: 0; width: 100%; height: var(--footer-height);
+    display: flex; padding: 10px 12px;
+    background: white; border-top: 1px solid #e0e0e0;
+    align-items: flex-end;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+  }
+  #input-area {
+    flex: 1; display: flex; align-items: flex-end;
+    background: var(--secondary-color); border-radius: 25px;
+    padding: 5px 10px; margin-right: 8px;
+  }
+  #user-input {
+    flex: 1; padding: 8px 5px; border: none; outline: none;
+    background: transparent; font-size: 1em; resize: none;
+    max-height: 80px; /* Limit input growth */
+    overflow-y: auto;
+    line-height: 1.35;
+  }
+  .action-btn {
+    background: none; border: none; color: #6c757d;
+    padding: 0 5px; cursor: pointer; font-size: 1.6em;
+    transition: color 0.2s;
+    height: 35px; /* Align with text area */
+    display: flex; align-items: center;
+  }
+  .action-btn:hover {color: var(--primary-color);}
+  #send-btn {
+    background: var(--primary-color); color: white;
+    width: 42px; height: 42px; border-radius: 50%;
+    font-size: 1.2em; display: flex; align-items: center; justify-content: center;
+    padding: 0; flex-shrink: 0;
+    box-shadow: 0 2px 5px rgba(0, 123, 255, 0.4);
+    transition: background-color 0.2s, box-shadow 0.2s;
+  }
+  #send-btn:disabled {
+    background: #ccc; 
+    cursor: not-allowed; 
+    box-shadow: none;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="https://www.dropbox.com/scl/fi/wvnzggd9meljpp6ufwds6/IMG_20251007_212859.jpg?rlkey=dtwzfwg7774ymm80v9fx6lp14&st=1d7gfyah&dl=1" alt="Bot">
+  <span>ယွန်းဝါ</span>
+  <i class="ri-settings-3-line"></i>
+</header>
+
+<div id="chat-container"></div>
+
+<footer>
+  <div id="input-area">
+    <button class="action-btn" onclick="document.getElementById('image-input').click()" title="ပုံပို့ရန်">
+      <i class="ri-image-add-fill"></i>
+    </button>
+    <textarea id="user-input" placeholder="မေးချင်တာရေးပါ..." rows="1" oninput="autoExpand()"></textarea>
+  </div>
+  <button id="send-btn" onclick="sendMessage()" disabled title="ပို့ရန်">
+    <i class="ri-send-plane-fill"></i>
+  </button>
+  <input type="file" id="image-input" accept="image/*" style="display:none">
+</footer>
+
+<script>
+const SHEET_URL = "https://opensheet.elk.sh/1udM1FPGbAPi4DOMR_hgd1zyDPbtug2kgonrlgo6CtZk/1";
+const CHAT_HISTORY_KEY = "yoonMayChatHistory"; // Local storage key
+const USER_AVATAR = "https://i.pinimg.com/736x/32/96/51/329651bbe6f3d0155307f884be562753.jpg";
+const BOT_AVATAR = "https://www.dropbox.com/scl/fi/wvnzggd9meljpp6ufwds6/IMG_20251007_212859.jpg?rlkey=dtwzfwg7774ymm80v9fx6lp14&st=1d7gfyah&dl=1";
+
+const chatContainer = document.getElementById("chat-container");
+const userInput = document.getElementById("user-input");
+const sendButton = document.getElementById("send-btn");
+
+// ----------------------------------------------------
+// 1. UI/UX Functions (AutoExpand & History Management)
+// ----------------------------------------------------
+
+/**
+ * Automatically adjusts textarea height and manages send button state.
+ */
+function autoExpand() {
+    userInput.style.height = 'auto';
+    userInput.style.height = userInput.scrollHeight + 'px';
+    const text = userInput.value.trim();
+    sendButton.disabled = !text;
+}
+
+/**
+ * Saves the current chat history to Local Storage.
+ * @param {object} message - The message object to save.
+ */
+function saveMessageToHistory(message) {
+    const history = JSON.parse(localStorage.getItem(CHAT_HISTORY_KEY) || "[]");
+    history.push(message);
+    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(history));
+}
+
+/**
+ * Loads and displays chat history from Local Storage on page load.
+ */
+function loadChatHistory() {
+    const history = JSON.parse(localStorage.getItem(CHAT_HISTORY_KEY) || "[]");
+    history.forEach(msg => {
+        addMessage(msg.sender, msg.text, msg.img, false); // Don't save again
+    });
+}
+
+// ----------------------------------------------------
+// 2. Chat Rendering Functions
+// ----------------------------------------------------
+
+/**
+ * Adds a message bubble to the chat container.
+ * @param {string} sender - "user" or "bot"
+ * @param {string} text - The message text (can be null for image-only)
+ * @param {string} [imgUrl=null] - URL or DataURL for an image
+ * @param {boolean} [save=true] - Whether to save the message to Local Storage.
+ * @returns {HTMLElement} The created message element.
+ */
+function addMessage(sender, text, imgUrl = null, save = true) {
+    const msg = document.createElement("div");
+    msg.classList.add("message", sender);
+
+    const icon = document.createElement("div");
+    icon.classList.add("icon");
+    const im = document.createElement("img");
+    im.src = sender === "bot" ? BOT_AVATAR : USER_AVATAR;
+    im.alt = sender;
+    icon.appendChild(im);
+
+    const bubble = document.createElement("div");
+    bubble.classList.add("bubble");
+
+    if (imgUrl) {
+        const i = document.createElement("img");
+        i.src = imgUrl;
+        i.alt = "Sent image";
+        i.onload = () => chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll after image loads
+        bubble.appendChild(i);
+    }
+    
+    if (text) {
+        bubble.innerHTML += text; 
+    }
+
+    // Append icon and bubble in the correct order for flexbox
+    msg.append(sender === "bot" ? icon : bubble);
+    msg.append(sender === "bot" ? bubble : icon);
+    
+    chatContainer.appendChild(msg);
+    if (save) {
+        saveMessageToHistory({ sender, text, img: imgUrl });
+    }
+    chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll to bottom
+    return msg;
+}
+
+/**
+ * Adds a temporary loading indicator for the bot.
+ * @returns {HTMLElement} The loading message element.
+ */
+function addLoadingMessage() {
+    const msg = document.createElement("div");
+    msg.classList.add("message", "bot", "loading");
+
+    const icon = document.createElement("div"); icon.classList.add("icon");
+    const im = document.createElement("img"); im.src = BOT_AVATAR; im.alt = "Bot"; icon.appendChild(im);
+
+    const bubble = document.createElement("div");
+    bubble.classList.add("bubble", "loading-dots");
+    bubble.innerHTML = '<div></div><div></div><div></div>';
+
+    msg.append(icon, bubble);
+    chatContainer.appendChild(msg);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    return msg;
+}
+
+// ----------------------------------------------------
+// 3. Bot Logic (Simulated AI + Sheet Fallback)
+// ----------------------------------------------------
+
+/**
+ * Simulates a sophisticated AI response or fetches from the sheet.
+ */
+async function getBotResponse(userText) {
+    const lowerText = userText.toLowerCase().trim();
+
+    // --- AI Simulation Logic ---
+    if (lowerText.includes("စမ်းသပ်")) {
+        return { text: "မင်္ဂလာပါ! ကျွန်မက PumpThako ရဲ့ Ai စမ်းသပ်စနစ်ပါ။ ဘယ်လို ကူညီပေးရမလဲ။", type: "text" };
+    }
+    if (lowerText.includes("ယနေ့")) {
+        const date = new Date().toLocaleDateString('my-MM', { year: 'numeric', month: 'long', day: 'numeric' });
+        return { text: `ယနေ့ရက်စွဲကတော့ **${date}** ဖြစ်ပါတယ်!`, type: "text" };
+    }
+    if (lowerText.includes("ပုံ")) {
+         return { text: "စိတ်မကောင်းပါဘူး၊ ဒီစမ်းသပ်မှုမှာ ပုံအသစ်ရှာပေးလို့ မရသေးပါဘူး။", type: "text" };
+    }
+    
+    // --- Sheet Fallback Logic ---
+    try {
+        const res = await fetch(SHEET_URL);
+        if (!res.ok) throw new Error("Sheet fetch failed");
+        const data = await res.json();
+        const match = data.find(r => r.keyword && lowerText.includes(r.keyword.toLowerCase()));
+
+        if (match) {
+            let reply = match.answer || "😅 စာမတွေ့ပါ";
+            if (match.type === "image") return { img: match.answer, text: "ရော့ ဒီပုံကိုကြည့်ပါ" };
+            if (match.type === "link") return { text: `အသုံးဝင်တဲ့လင့်ခ်: <a href="${match.answer}" target="_blank">${match.answer}</a>`, type: "link" };
+            return { text: reply, type: "text" };
+        } else {
+            return { text: "ကျွန်မ အလောက် ညဏ်မမှီသေးပါဘူး 🥺🥺။ အခြား မေးခွန်းတစ်ခုခု မေးကြည့်ပါလား။", type: "text" };
+        }
+    } catch (e) {
+        console.error("Sheet Error:", e);
+        return { text: "⚠️ Sheet ကို fetch မရပါ သို့မဟုတ် ကွန်ရက် အဆင်မပြေပါ။", type: "error" };
+    }
+}
+
+// ----------------------------------------------------
+// 4. Main Send/Event Handlers
+// ----------------------------------------------------
+
+async function sendMessage() {
+    const text = userInput.value.trim();
+    if (!text) return;
+    
+    // 1. Send User Message and Clear Input
+    addMessage("user", text);
+    userInput.value = "";
+    userInput.style.height = 'auto'; // Reset height
+    sendButton.disabled = true;
+
+    // 2. Add Loading Indicator
+    const loadingMsg = addLoadingMessage();
+    
+    try {
+        // 3. Get Bot Response
+        const response = await getBotResponse(text);
+        
+        // 4. Remove Loading and Display Response
+        chatContainer.removeChild(loadingMsg);
+        addMessage("bot", response.text || null, response.img || null);
+        
+    } catch (e) {
+        // 5. Handle Critical Errors
+        chatContainer.removeChild(loadingMsg);
+        addMessage("bot", "🚨 ပြဿနာတစ်ခုခုပေါ်လာလို့ မဖြေနိုင်ခဲ့ပါ။ ကွန်ရက်ကို စစ်ဆေးပါ။", null);
+    }
+}
+
+/**
+ * Handles image file selection.
+ */
+document.getElementById("image-input").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = () => {
+            // Add image message to chat and save to history
+            addMessage("user", "🖼️ ပုံ ပို့ပြီးပါပြီ", reader.result);
+        };
+        reader.readAsDataURL(file);
+        e.target.value = ''; // Clear file input for next time
+    }
+});
+
+// Event listener for sending on Enter (but not Shift+Enter)
+userInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault(); // Prevent new line
+        if (!sendButton.disabled) {
+            sendMessage();
+        }
+    }
+});
+
+// ----------------------------------------------------
+// 5. Initialization
+// ----------------------------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+    loadChatHistory(); // Load history when the page loads
+    autoExpand(); // Initial check for send button state
+});
+</script>
+
+</body>
+</html>
